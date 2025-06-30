@@ -1,0 +1,90 @@
+-- Remote Spy GUI (Client-Side)
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+-- Criar a GUI dinamicamente
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "RemoteSpyGui"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = PlayerGui
+
+local frame = Instance.new("ScrollingFrame")
+frame.Name = "LogFrame"
+frame.Size = UDim2.new(0.4, 0, 0.5, 0)
+frame.Position = UDim2.new(0.55, 0, 0.05, 0)
+frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+frame.BackgroundTransparency = 0.2
+frame.BorderSizePixel = 0
+frame.CanvasSize = UDim2.new(0, 0, 1, 0)
+frame.ScrollBarThickness = 6
+frame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+frame.VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar
+frame.Parent = screenGui
+
+local UIListLayout = Instance.new("UIListLayout", frame)
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Padding = UDim.new(0, 2)
+
+-- Função para adicionar uma linha ao log
+local function logEvent(text)
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1, -10, 0, 20)
+	label.Text = os.date("[%H:%M:%S] ") .. text
+	label.TextColor3 = Color3.fromRGB(255, 255, 255)
+	label.BackgroundTransparency = 1
+	label.Font = Enum.Font.Code
+	label.TextSize = 14
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.TextWrapped = true
+	label.Parent = frame
+
+	task.delay(30, function()
+		if label and label.Parent then
+			label:Destroy()
+		end
+	end)
+end
+
+-- Função para espionar Remotes
+local function spy(remote)
+	if remote:IsA("RemoteEvent") then
+		remote.OnClientEvent:Connect(function(...)
+			logEvent("📨 RemoteEvent: " .. remote.Name .. " | Args: " .. tostring(...))
+		end)
+	elseif remote:IsA("RemoteFunction") then
+		local original = remote.InvokeClient
+		remote.InvokeClient = function(self, ...)
+			logEvent("📥 RemoteFunction: " .. remote.Name .. " | Args: " .. tostring(...))
+			return original(self, ...)
+		end
+	end
+end
+
+-- Escaneia remotes em uma pasta
+local function scan(container)
+	for _, obj in ipairs(container:GetDescendants()) do
+		if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
+			spy(obj)
+		end
+	end
+end
+
+-- Monitora adições futuras
+local function watch(container)
+	container.DescendantAdded:Connect(function(obj)
+		if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
+			spy(obj)
+		end
+	end)
+end
+
+-- Inicializa
+local containers = {ReplicatedStorage}
+for _, container in ipairs(containers) do
+	scan(container)
+	watch(container)
+end
+
+logEvent("✅ Remote Spy GUI ativado.")
