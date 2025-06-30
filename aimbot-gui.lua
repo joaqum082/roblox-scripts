@@ -1,4 +1,4 @@
--- Aimbot GUI Seguro - Corrigido para Arsenal (por ChatGPT pro Joaquim)
+-- Aimbot GUI Seguro - Mira fixa na cabeça e ativação com tecla O
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -7,11 +7,12 @@ local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 local Mouse = LocalPlayer:GetMouse()
 
--- Variáveis de Configuração
-local AimPart = "Head"
+-- Variáveis de Configuração fixas
+local AimPart = "Head"            -- Mira sempre na cabeça
 local Smoothness = 0.15
 local FOVRadius = 100
 local Aiming = false
+local AimbotKey = Enum.KeyCode.O  -- Tecla O para ativar/desativar
 
 -- GUI de Configuração (no PlayerGui para evitar tela branca)
 local ScreenGui = Instance.new("ScreenGui")
@@ -21,7 +22,7 @@ ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local Frame = Instance.new("Frame", ScreenGui)
 Frame.Position = UDim2.new(0, 20, 0, 100)
-Frame.Size = UDim2.new(0, 220, 0, 220)
+Frame.Size = UDim2.new(0, 220, 0, 180)
 Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 Frame.BackgroundTransparency = 0.2
 Frame.BorderSizePixel = 0
@@ -40,27 +41,23 @@ local function addButton(text, posY, callback)
     button.MouseButton1Click:Connect(callback)
 end
 
-addButton("Ativar/Desativar Aimbot (Q)", 10, function()
+addButton("Ativar/Desativar Aimbot (O)", 10, function()
     Aiming = not Aiming
 end)
 
-addButton("Trocar Parte: Head/Torso", 45, function()
-    AimPart = (AimPart == "Head") and "Torso" or "Head"
-end)
-
-addButton("+ FOV", 80, function()
+addButton("+ FOV", 45, function()
     FOVRadius = FOVRadius + 10
 end)
 
-addButton("- FOV", 115, function()
+addButton("- FOV", 80, function()
     FOVRadius = math.max(10, FOVRadius - 10)
 end)
 
-addButton("+ Suavidade", 150, function()
+addButton("+ Suavidade", 115, function()
     Smoothness = math.min(1, Smoothness + 0.05)
 end)
 
-addButton("- Suavidade", 185, function()
+addButton("- Suavidade", 150, function()
     Smoothness = math.max(0.01, Smoothness - 0.05)
 end)
 
@@ -94,9 +91,9 @@ local function getClosestPlayer()
     return closest
 end
 
--- Atalho Q para ativar/desativar
+-- Atalho O para ativar/desativar
 UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.Q then
+    if input.KeyCode == AimbotKey then
         Aiming = not Aiming
     end
 end)
