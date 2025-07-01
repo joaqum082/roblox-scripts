@@ -1,13 +1,9 @@
---[[ 
-Arsenal Test Script – By ChatGPT & Joaquim
-ESP + Aimbot + Godmode + AutoKill + No Recoil/Spread/Reload
-⚠️ Apenas para uso autorizado e testes!
-]]
+-- Arsenal ESP + Aimbot + Godmode + AutoKill Seguro
+-- Autor: ChatGPT + Joaquim
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Camera = workspace.CurrentCamera
 local LP = Players.LocalPlayer
 
@@ -18,20 +14,20 @@ local godmodeEnabled = true
 local autoKillEnabled = true
 local fovRadius = 120
 
--- GUI
+-- Criar GUI simples
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = "ArsenalMod_GUI"
 
-local function createBtn(txt, posY)
-    local b = Instance.new("TextButton", gui)
-    b.Size = UDim2.new(0, 160, 0, 40)
-    b.Position = UDim2.new(0, 10, 0, posY)
-    b.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    b.TextColor3 = Color3.new(1, 1, 1)
-    b.Font = Enum.Font.SourceSansBold
-    b.TextSize = 18
-    b.Text = txt
-    return b
+local function createBtn(text, posY)
+    local btn = Instance.new("TextButton", gui)
+    btn.Size = UDim2.new(0, 160, 0, 40)
+    btn.Position = UDim2.new(0, 10, 0, posY)
+    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.Font = Enum.Font.SourceSansBold
+    btn.TextSize = 18
+    btn.Text = text
+    return btn
 end
 
 local espBtn = createBtn("ESP: ON", 0.05)
@@ -59,26 +55,29 @@ godBtn.MouseButton1Click:Connect(function()
     godBtn.Text = "Godmode: " .. (godmodeEnabled and "ON" or "OFF")
 end)
 
--- FOV Circle
+-- Criar círculo do FOV (usando Drawing API)
 local fovCircle = Drawing.new("Circle")
 fovCircle.Color = Color3.new(1, 1, 1)
 fovCircle.Thickness = 1
 fovCircle.Filled = false
 fovCircle.Transparency = 0.5
+fovCircle.Visible = false
 
 RunService.RenderStepped:Connect(function()
-    local mouse = UIS:GetMouseLocation()
-    fovCircle.Position = Vector2.new(mouse.X, mouse.Y)
-    fovCircle.Radius = fovRadius
-    fovCircle.Visible = aimbotEnabled
+    pcall(function()
+        local mouse = UIS:GetMouseLocation()
+        fovCircle.Position = Vector2.new(mouse.X, mouse.Y)
+        fovCircle.Radius = fovRadius
+        fovCircle.Visible = aimbotEnabled
+    end)
 end)
 
--- ESP
+-- Função para criar ESP
 local function createESP(plr)
     if plr == LP or plr.Team == LP.Team then return end
     if not plr.Character or not plr.Character:FindFirstChild("Head") then return end
-
     local head = plr.Character.Head
+
     if not head:FindFirstChild("ESPTag") then
         local esp = Instance.new("BillboardGui", head)
         esp.Name = "ESPTag"
@@ -114,7 +113,7 @@ local function clearESP(plr)
     end
 end
 
--- Aimbot & AutoKill
+-- Função para achar a cabeça inimiga mais próxima no FOV
 local function getClosestEnemyHead()
     local closest, minDist = nil, fovRadius
     for _, plr in pairs(Players:GetPlayers()) do
@@ -134,24 +133,34 @@ local function getClosestEnemyHead()
     return closest
 end
 
--- Remove Recoil, Spread e Reload
+-- Remove recoil, spread e reload
 local function noRecoil()
-    local wep = LP:FindFirstChild("Backpack") and LP.Backpack:FindFirstChildOfClass("Tool")
-    if wep and wep:FindFirstChild("Settings") then
-        local settings = wep.Settings
-        if settings:FindFirstChild("Recoil") then settings.Recoil.Value = 0 end
-        if settings:FindFirstChild("Spread") then settings.Spread.Value = 0 end
-        if settings:FindFirstChild("ReloadTime") then settings.ReloadTime.Value = 0 end
+    local tool = LP.Character and LP.Character:FindFirstChildOfClass("Tool")
+    if tool and tool:FindFirstChild("Settings") then
+        local settings = tool.Settings
+        if settings:FindFirstChild("Recoil") then
+            settings.Recoil.Value = 0
+        end
+        if settings:FindFirstChild("Spread") then
+            settings.Spread.Value = 0
+        end
+        if settings:FindFirstChild("ReloadTime") then
+            settings.ReloadTime.Value = 0
+        end
     end
 end
 
--- Ciclos
+-- Loop principal
 RunService.RenderStepped:Connect(function()
-    -- ESP
-    for _, plr in ipairs(Players:GetPlayers()) do
+    -- Atualiza ESP
+    for _, plr in pairs(Players:GetPlayers()) do
         if plr ~= LP and plr.Character and plr.Character:FindFirstChild("Head") then
             if plr.Team ~= LP.Team then
-                if espEnabled then createESP(plr) else clearESP(plr) end
+                if espEnabled then
+                    createESP(plr)
+                else
+                    clearESP(plr)
+                end
             else
                 clearESP(plr)
             end
@@ -168,19 +177,22 @@ RunService.RenderStepped:Connect(function()
 
     -- AutoKill
     if autoKillEnabled and LP.Character and LP.Character:FindFirstChild("Humanoid") then
-        local gun = LP.Character:FindFirstChildOfClass("Tool")
+        local tool = LP.Character:FindFirstChildOfClass("Tool")
         local target = getClosestEnemyHead()
-        if gun and target then
-            gun:Activate()
-            mouse1click()
+        if tool and target then
+            tool:Activate()
+            -- Nota: evita usar mouse1click para não travar
         end
     end
 
     -- Godmode
     if godmodeEnabled and LP.Character and LP.Character:FindFirstChild("Humanoid") then
-        LP.Character.Humanoid.Health = LP.Character.Humanoid.MaxHealth
+        local hum = LP.Character.Humanoid
+        if hum.Health < hum.MaxHealth then
+            hum.Health = hum.MaxHealth
+        end
     end
 
-    -- No Recoil / Spread / Reload
+    -- Remove recoil, spread e reload
     noRecoil()
 end)
